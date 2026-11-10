@@ -22,16 +22,20 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     NETRC=/run/secrets/packages-netrc go mod download
 
 FROM source AS test
+ARG GOPROXY
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go vet ./... && go test ./...
+    --mount=type=secret,id=packages-netrc,target=/run/secrets/packages-netrc,required=false \
+    NETRC=/run/secrets/packages-netrc go vet ./... && NETRC=/run/secrets/packages-netrc go test ./...
 
 FROM source AS build
+ARG GOPROXY
 ARG TARGETOS
 ARG TARGETARCH
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/proxy ./cmd/proxy
+    --mount=type=secret,id=packages-netrc,target=/run/secrets/packages-netrc,required=false \
+    NETRC=/run/secrets/packages-netrc GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /out/proxy ./cmd/proxy
 
 # 3.24.2, the runtime upstream's v0.11.0 image uses.
 FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
