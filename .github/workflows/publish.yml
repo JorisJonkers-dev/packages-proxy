@@ -1,0 +1,41 @@
+# Publish: the image, for estate's images.lock.yml to pin. release.yml calls it with
+# the version it just released; a tag pushed by hand or a dispatch starts it too.
+#
+# push of a v*.*.* tag (authored by release.yml via the App token) drives:
+#   publish-packages-proxy
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (vX.Y.Z)
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to publish (vX.Y.Z)
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  publish-packages-proxy:
+    uses: JorisJonkers-dev/github-workflows/.github/workflows/container-publish.yml@2814b76fc3f5bd4f02a6e4a0fa789f1307757daa # v0.45.4
+    with:
+      require-package-proxy: true
+      image-name: packages-proxy
+      version: ${{ inputs.tag || github.ref_name }}
+      context: proxy
+      dockerfile: proxy/Dockerfile
+      platforms: linux/amd64,linux/arm64
+    permissions:
+      contents: read
+      packages: write
+    secrets:
+      PACKAGES_PROXY_TOKEN: ${{ secrets.PACKAGES_PROXY_TOKEN }}

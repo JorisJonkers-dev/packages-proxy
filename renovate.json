@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>JorisJonkers-dev/renovate-config"],
+  "packageRules": [
+    {
+      "description": "A new base image changes the image this repository publishes, so it waits for approval: bump VERSION in the same pull request.",
+      "matchDatasources": ["docker"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}
