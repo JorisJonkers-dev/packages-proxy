@@ -40,19 +40,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Writes the proxy key to ~/.netrc, which the build mounts as a BuildKit secret.
       - uses: JorisJonkers-dev/github-workflows/actions/setup-package-proxy@2814b76fc3f5bd4f02a6e4a0fa789f1307757daa # v0.45.4
-        id: proxy
         with:
           token: ${{ secrets.PACKAGES_PROXY_TOKEN }}
           require-package-proxy: true
 
       - name: Run upstream's suite on the patched source
-        env:
-          NETRC_FILE: ${{ steps.proxy.outputs.netrc }}
         run: |
           docker buildx build --target test \
             --build-arg GOPROXY=https://packages.jorisjonkers.dev/go \
-            --secret id=packages-netrc,src="$NETRC_FILE" \
+            --secret id=packages-netrc,src="$HOME/.netrc" \
             proxy
 
   # The image as the estate runs it: uid 1000, a read-only root, every capability dropped.
@@ -62,19 +60,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Writes the proxy key to ~/.netrc, which the build mounts as a BuildKit secret.
       - uses: JorisJonkers-dev/github-workflows/actions/setup-package-proxy@2814b76fc3f5bd4f02a6e4a0fa789f1307757daa # v0.45.4
-        id: proxy
         with:
           token: ${{ secrets.PACKAGES_PROXY_TOKEN }}
           require-package-proxy: true
 
       - name: Build the image
-        env:
-          NETRC_FILE: ${{ steps.proxy.outputs.netrc }}
         run: |
           docker buildx build --load -t packages-proxy:ci \
             --build-arg GOPROXY=https://packages.jorisjonkers.dev/go \
-            --secret id=packages-netrc,src="$NETRC_FILE" \
+            --secret id=packages-netrc,src="$HOME/.netrc" \
             proxy
 
       - name: Start the image under the restricted posture
